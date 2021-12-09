@@ -114,7 +114,6 @@
 # end
 
 require 'test/unit/assertions'
-include Test::Unit::Assertions
 
 class Digit
   attr_reader :value, :pattern
@@ -267,6 +266,8 @@ class Calculator
 end
 
 describe Calculator do
+  include Test::Unit::Assertions
+
   it 'calculates count of outputs for given digits' do
     input = File.read('fixtures/test.txt')
     digits = [

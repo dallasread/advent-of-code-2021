@@ -23,16 +23,39 @@ class Point
 
   def find_neighbours(points:)
     points.select do |point|
-      next(false) if point == self
-      next(false) if (point.x - x).abs > 1
-      next(false) if (point.y - y).abs > 1
+      next(true) if point.x == x && (point.y - y).abs == 1
+      next(true) if point.y == y && (point.x - x).abs == 1
 
-      true
+      false
     end
+  end
+
+  def find_neighbourhood(points:)
+    neighbourhood = [self]
+
+    neighbourhood.each do |neighbour|
+      neighbour.find_neighbours(points: points).each do |point|
+        neighbourhood << point unless neighbourhood.include?(point)
+      end
+    end
+
+    neighbourhood
   end
 
   def to_s
     "x=#{x} y=#{y} z=#{z}"
+  end
+end
+
+class Basin
+  attr_reader :points
+
+  def initialize(points:)
+    @points = points
+  end
+
+  def size
+    points.size
   end
 end
 
@@ -45,6 +68,18 @@ class Calculator
 
   def lowest_points
     points.select { |point| point.lower_than_all_neighbours?(points: points) }
+  end
+
+  def lowest_basins(n)
+    basins.sort_by(&:size).last(n)
+  end
+
+  def basins
+    points_without_height_of_nine = points.reject { |point| point.z == 9 }
+
+    lowest_points.map do |point|
+      Basin.new(points: point.find_neighbourhood(points: points_without_height_of_nine))
+    end
   end
 
   def self.sum_risks(points:)
@@ -65,6 +100,10 @@ class Calculator
 
     Calculator.new(points: points)
   end
+
+  def self.multiply_basins_size(basins:)
+    basins.map(&:size).inject(:*)
+  end
 end
 
 describe Calculator do
@@ -75,5 +114,12 @@ describe Calculator do
     calc = Calculator.from_raw(input)
 
     assert_equal 15, Calculator.sum_risks(points: calc.lowest_points)
+  end
+
+  it 'finds the biggest basins' do
+    input = File.read('fixtures/test.txt')
+    calc = Calculator.from_raw(input)
+
+    assert_equal 1134, Calculator.multiply_basins_size(basins: calc.lowest_basins(3))
   end
 end
